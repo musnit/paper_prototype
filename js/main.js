@@ -96,8 +96,6 @@ window.onload = function() {
         this.placedSymbol2.position = new Point(this.newX, this.startingY2);
     };
 
-    Game.PlayerTrail = Game.Obstacle;
-
     Game.spawnCooldown = 0.5;
 
     Game.player.jumping = false;
