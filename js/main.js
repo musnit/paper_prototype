@@ -5,7 +5,8 @@ function Game(sketch){
     this.timePlayed = 0;
     this.mouseClicks = [];
 
-    this.spawnCooldown = 0.5;
+    this.spawnCooldown = 1000;
+    this.lastSpawnTime = 0;
 
     this.player = new Player(this);
     this.things.push(this.player);
@@ -14,35 +15,29 @@ function Game(sketch){
 
 Game.prototype = {
     constructor: Game,
-    moveThings: function(event){
-        this.things.forEach(function(thing){
-            thing.move(event)
-        });
-    },
     drawThings: function(timePassed){
         this.things.forEach(function(thing){
             thing.draw(timePassed)
         });
     },
-    spawnThings: function(event){
-        if (this.spawnCooldown < 0) {
-            obstacle = new Obstacle();
-            obstacle.placedSymbol = obstacle.symbol.place(obstacle.startingPosition);
-            obstacle.placedSymbol2 = obstacle.symbol2.place(obstacle.startingPosition2);
-            obstacle.spawnTime = event.time;
+    spawnThings: function(timePassed){
+        if (this.spawnCooldown > 1500) {
+            obstacle = new Obstacle(this);
+            obstacle.spawnTime = timePassed;
+            this.lastSpawnTime = timePassed;
             this.obstacles.push(obstacle);
             this.things.push(obstacle);
-            this.spawnCooldown = 1.5;
+            this.spawnCooldown = 0;
         }
         else {
-            this.spawnCooldown = this.spawnCooldown - event.delta;
-        }    
+            this.spawnCooldown = timePassed - this.lastSpawnTime;
+        }
     }
 }
 
 function Player(game){
-    this.fillColor =  tinycolor("hsv(275, 100%, 100%)").toHsv()
-    this.fillColor2 = tinycolor("hsv(275, 100%, 100%)").toHsv()
+    this.fill =  tinycolor("hsv(275, 100%, 100%)").toHsv()
+    this.fill2 = tinycolor("hsv(275, 100%, 100%)").toHsv()
     this.jumping = false;
     this.startingX = 100; 
     this.startingY = 200; 
@@ -54,43 +49,46 @@ Player.prototype = {
     constructor: Player,
     draw: function(timePassed){
         this.game.sketch.noStroke();
-        this.game.sketch.setFill(this.fillColor);
-        this.draw1(this.game.sketch);
-        this.game.sketch.setFill(this.fillColor2);
-        this.draw2(this.game.sketch);
+        this.draw1(this.game.sketch, timePassed);
+        this.draw2(this.game.sketch, timePassed);
     },
-    draw1: function(sketch){
-        sketch.rect(this.startingX,this.startingY,40,50);
-    },
-    draw2: function(sketch){
-        sketch.rect(this.startingX,this.startingY2,40,300);
-    },
-    move: function(event){
-        if (this.startJump){
-            this.startJump = false;
-            this.jumping = true;
-            this.jumpStartTime = event.time;
-            this.game.mouseClicks.push(event.time);
-        }
+    draw1: function(sketch, timePassed){
+        var y, jumpingTime;
         if (this.jumping){
-            var jumpingTime = event.time - this.jumpStartTime;
-            this.newY = this.startingY - this.calculateJumpHeight(jumpingTime);
-            this.placedSymbol.position = new Point(this.startingX, this.newY);
-            this.newCol = this.colorize(this.calculateJumpHeight(jumpingTime));
-            this.placedSymbol2.symbol._definition.fillColor = this.newCol;
+            jumpingTime = timePassed - this.jumpStartTime;
+            y = this.startingY - this.calculateJumpHeight(jumpingTime);
         }
+        else{
+            y = this.startingY;
+        }
+        
+        sketch.setFill(this.fill);
+        sketch.rect(this.startingX, y, 40, 50);
+    },
+    draw2: function(sketch, timePassed){
+        var color, jumpingTime;
+        if (this.jumping){
+            jumpingTime = timePassed - this.jumpStartTime;
+            color = this.colorize(this.calculateJumpHeight(jumpingTime));
+        }
+        else{
+            color = this.fill2;
+        }
+        sketch.setFill(color);
+        sketch.rect(this.startingX,this.startingY2,40,300);
     },
     //0 < y < 50 < y < 78
     calculateJumpHeight: function(t){
         var v0 = 370;
         var a = -780;
+        t = t/1000;
         var r = v0*t + a*t*t/2
         if(r < 0){
             this.jumping = false;
             return 0;
         }
         else{
-            return (v0*t + a*t*t/2);
+            return r;
         }
     },
     // 250 < y < 300 < y < 328
@@ -103,26 +101,36 @@ Player.prototype = {
         else{
             newCol = 328;
         }
-        return tinycolor("hsv(" + newCol + ", 100%, 100%)").toHexString()
+        return tinycolor("hsv(" + newCol + ", 100%, 100%)").toHsv()
     }
 }
 
-function Obstacle(){
-    this.fillColor = tinycolor("hsv(325, 100%, 100%)").toHexString();
-    this.fillColor2 = tinycolor("hsv(325, 100%, 100%)").toHexString();
+function Obstacle(game){
+    this.fill = tinycolor("hsv(325, 100%, 100%)").toHsv();
+    this.fill2 = tinycolor("hsv(325, 100%, 100%)").toHsv();
     this.startingX = 600;
     this.startingY = 200;
     this.startingY2 = 400;
+    this.game = game;
 }
 
 Obstacle.prototype = {
-    draw1: function(sketch){
-        sketch.fill(12);
-        sketch.rect(this.startingX,this.startingY,40,50);
+    draw: function(timePassed){
+        this.game.sketch.noStroke();
+        this.draw1(this.game.sketch, timePassed);
+        this.draw2(this.game.sketch, timePassed);
     },
-    draw2: function(sketch){
-        sketch.fill(12);
-        sketch.rect(this.startingX,this.startingY2,40,300);
+    draw1: function(sketch, timePassed){
+        var aliveTime = timePassed - this.spawnTime;
+        var x = this.startingX - aliveTime/5;
+        sketch.setFill(this.fill);
+        sketch.rect(x,this.startingY,40,50);
+    },
+    draw2: function(sketch, timePassed){
+        var aliveTime = timePassed - this.spawnTime;
+        var x = this.startingX - aliveTime/5;
+        sketch.setFill(this.fill2);
+        sketch.rect(x,this.startingY2,40,300);
     },
     move: function(event){
         var aliveTime = event.time - this.spawnTime;
@@ -132,19 +140,13 @@ Obstacle.prototype = {
     }
 }
 
-function onMouseDown(event) {
-    if(!game.player.jumping){
-        game.player.startJump = true;
-    }
-}
-
 window.onload = function() {
     var game = new Game();
 
     var setupSketch = function(sketch){
         game.sketch = sketch;
         sketch.setup = function(){
-            var myCanvas = sketch.createCanvas(600, 1200);
+            var myCanvas = sketch.createCanvas(1200, 1200);
             myCanvas.parent('canvas-container');
             sketch.colorMode(sketch.HSB,360,1,1)
             sketch.setFill = function(hsvHash){
@@ -157,6 +159,15 @@ window.onload = function() {
             timePassed = new Date() - game.startTime;
             game.drawThings(timePassed);
             game.spawnThings(timePassed);
+        }
+
+        sketch.mouseClicked = function(){
+            if(!game.player.jumping){
+                game.player.jumping = true;
+                timePressed = new Date() - game.startTime;
+                game.player.jumpStartTime = timePressed;
+                game.mouseClicks.push(timePressed);
+            }
         }
     };
 
