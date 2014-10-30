@@ -161,7 +161,7 @@ window.onload = function() {
             game.spawnThings(timePassed);
         }
 
-        sketch.mouseClicked = function(){
+        sketch.mousePressed = function(){
             if(!game.player.jumping){
                 game.player.jumping = true;
                 timePressed = new Date() - game.startTime;
