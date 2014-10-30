@@ -1,0 +1,22 @@
+TODOS:
+
+Misc:
+Grep for for 'TODO' in all files.
+
+Bugs:
+Fix memory leaks lul.
+
+Roadmap:
+Slider to control different parameters/game views/visual features/visual hints and cues/colours/...
+Trajectory visualization. (Maybe prototype it in a mod for some other platform game eg: mario/meatboy/those superhard hacked games)
+Hold input affecting things, not just tap input.
+Feature flag - function transitions over time, or discontinuosly in a binary way, or continuously up to safety then stop, then continuos back to normal, or continuous up to safetey, and up to max height and back down.
+  Feature flag - colour stops at pink or goes past all the way
+  Feature flag - block jumps
+View - bottom colour one wrapped into circle.
+View Transition - top one to bottom one prototype
+
+Other Features:
+non-quadratic functions l0l
+picking your functions
+composing functions :D
