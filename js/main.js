@@ -131,12 +131,6 @@ Obstacle.prototype = {
         var x = this.startingX - aliveTime/5;
         sketch.setFill(this.fill2);
         sketch.rect(x,this.startingY2,40,300);
-    },
-    move: function(event){
-        var aliveTime = event.time - this.spawnTime;
-        this.newX = this.startingX - aliveTime*200;
-        this.placedSymbol.position = new Point(this.newX, this.startingY);
-        this.placedSymbol2.position = new Point(this.newX, this.startingY2);
     }
 }
 
@@ -146,7 +140,7 @@ window.onload = function() {
     var setupSketch = function(sketch){
         game.sketch = sketch;
         sketch.setup = function(){
-            var myCanvas = sketch.createCanvas(1200, 1200);
+            var myCanvas = sketch.createCanvas(1912, 1200);
             myCanvas.parent('canvas-container');
             sketch.colorMode(sketch.HSB,360,1,1)
             sketch.setFill = function(hsvHash){
