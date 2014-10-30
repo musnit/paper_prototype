@@ -1,5 +1,3 @@
-paper.install(window);
-
 function Game(sketch){
     this.sketch = sketch;
     this.things = [];
@@ -10,26 +8,20 @@ function Game(sketch){
     this.spawnCooldown = 0.5;
 
     this.player = new Player(this);
-    this.player.jumping = false;
-    this.player.startingX = 100; 
-    this.player.startingY = 200; 
-    this.player.startingPosition = new Point(this.player.startingX, this.player.startingY); 
-    this.player.placedSymbol = this.player.symbol.place(this.player.startingPosition);
-    this.player.startingX2 = 100; 
-    this.player.startingY2 = 400; 
-    this.player.startingPosition2 = new Point(this.player.startingX2, this.player.startingY2); 
-    this.player.placedSymbol2 = this.player.symbol2.place(this.player.startingPosition2);
     this.things.push(this.player);
+    this.startTime = new Date();
 }
 
 Game.prototype = {
     constructor: Game,
-    setupSketch: function(sketch){
-        this.sketch = sketch;
-    },
     moveThings: function(event){
         this.things.forEach(function(thing){
             thing.move(event)
+        });
+    },
+    drawThings: function(timePassed){
+        this.things.forEach(function(thing){
+            thing.draw(timePassed)
         });
     },
     spawnThings: function(event){
@@ -49,17 +41,30 @@ Game.prototype = {
 }
 
 function Player(game){
-    this.path = new Path.Rectangle([0, 0], [40, 50]);
-    this.path2 = new Path.Rectangle([0, 0], [40, 300]);
-    this.path.fillColor =  tinycolor("hsv(275, 100%, 100%)").toHexString()
-    this.path2.fillColor = tinycolor("hsv(275, 100%, 100%)").toHexString()
-    this.symbol = new Symbol(this.path);
-    this.symbol2 = new Symbol(this.path2);
+    this.fillColor =  tinycolor("hsv(275, 100%, 100%)").toHsv()
+    this.fillColor2 = tinycolor("hsv(275, 100%, 100%)").toHsv()
+    this.jumping = false;
+    this.startingX = 100; 
+    this.startingY = 200; 
+    this.startingY2 = 400; 
     this.game = game;
 }
 
 Player.prototype = {
     constructor: Player,
+    draw: function(timePassed){
+        this.game.sketch.noStroke();
+        this.game.sketch.setFill(this.fillColor);
+        this.draw1(this.game.sketch);
+        this.game.sketch.setFill(this.fillColor2);
+        this.draw2(this.game.sketch);
+    },
+    draw1: function(sketch){
+        sketch.rect(this.startingX,this.startingY,40,50);
+    },
+    draw2: function(sketch){
+        sketch.rect(this.startingX,this.startingY2,40,300);
+    },
     move: function(event){
         if (this.startJump){
             this.startJump = false;
@@ -103,20 +108,22 @@ Player.prototype = {
 }
 
 function Obstacle(){
-    this.path = new Path.Rectangle([0, 0], [40, 50]),
-    this.path2 = new Path.Rectangle([0, 0], [40, 300]),
-    this.path.fillColor = tinycolor("hsv(325, 100%, 100%)").toHexString();
-    this.path2.fillColor = tinycolor("hsv(325, 100%, 100%)").toHexString();
-    this.symbol = new Symbol(this.path),
-    this.symbol2 = new Symbol(this.path2),
-    this.startingX = 600,
-    this.startingY = 200,
-    this.startingY2 = 400,
-    this.startingPosition = new Point(this.startingX, this.startingY),
-    this.startingPosition2 = new Point(this.startingX, this.startingY2)
+    this.fillColor = tinycolor("hsv(325, 100%, 100%)").toHexString();
+    this.fillColor2 = tinycolor("hsv(325, 100%, 100%)").toHexString();
+    this.startingX = 600;
+    this.startingY = 200;
+    this.startingY2 = 400;
 }
 
 Obstacle.prototype = {
+    draw1: function(sketch){
+        sketch.fill(12);
+        sketch.rect(this.startingX,this.startingY,40,50);
+    },
+    draw2: function(sketch){
+        sketch.fill(12);
+        sketch.rect(this.startingX,this.startingY2,40,300);
+    },
     move: function(event){
         var aliveTime = event.time - this.spawnTime;
         this.newX = this.startingX - aliveTime*200;
@@ -132,15 +139,26 @@ function onMouseDown(event) {
 }
 
 window.onload = function() {
-    paper.setup('myCanvas');
-    clicker = new Tool();
-    clicker.onMouseDown = onMouseDown;
-    game = new Game();
+    var game = new Game();
 
-    view.onFrame = function(event) {
-        game.timePlayed = event.time;
-        game.moveThings(event);
-        game.spawnThings(event);
-    }
+    var setupSketch = function(sketch){
+        game.sketch = sketch;
+        sketch.setup = function(){
+            var myCanvas = sketch.createCanvas(600, 1200);
+            myCanvas.parent('canvas-container');
+            sketch.colorMode(sketch.HSB,360,1,1)
+            sketch.setFill = function(hsvHash){
+                this.fill(hsvHash.h,hsvHash.s,hsvHash.v)
+            }
+        }
+
+        sketch.draw = function(){
+            sketch.background(255);
+            timePassed = new Date() - game.startTime;
+            game.drawThings(timePassed);
+            game.spawnThings(timePassed);
+        }
+    };
+
+    var myp5 = new p5(setupSketch, 'canvas-container');
 }
-
