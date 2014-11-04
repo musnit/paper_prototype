@@ -6,7 +6,9 @@ function Game(sketch){
     this.mouseClicks = [];
 
     this.spawnCooldown = 1000;
+    this.trailCooldown = 0;
     this.lastSpawnTime = 0;
+    this.lastTrailTime = 0;
 
     this.player = new Player(this);
     this.things.push(this.player);
@@ -21,17 +23,48 @@ Game.prototype = {
         });
     },
     update: function(timePassed){
+        this.spawnObstacles();
+        this.spawnTrail();
+    },
+    spawnObstacles: function(){
         if (this.spawnCooldown > 1500) {
-            obstacle = new Obstacle(this);
-            obstacle.spawnTime = timePassed;
-            this.lastSpawnTime = timePassed;
-            this.obstacles.push(obstacle);
-            this.things.push(obstacle);
-            this.spawnCooldown = 0;
+            this.spawnObstacle();
         }
         else {
             this.spawnCooldown = timePassed - this.lastSpawnTime;
         }
+    },
+    spawnTrail: function(){
+        if (this.trailCooldown > 10) {
+            var y, jumpingTime;
+            if (this.player.jumping){
+                jumpingTime = timePassed - this.player.jumpStartTime;
+                y = this.player.startingY - this.player.calculateJumpHeight(jumpingTime);
+            }
+            else{
+                y = this.player.startingY;
+            }
+
+            obstacle = new Obstacle(this);
+            obstacle.spawnTime = timePassed;
+            obstacle.startingY = y;
+            obstacle.startingX = this.player.startingX;
+            this.lastTrailTime = timePassed;
+            this.obstacles.push(obstacle);
+            this.things.push(obstacle);
+            this.trailCooldown = 0;
+        }
+        else {
+            this.trailCooldown = timePassed - this.lastTrailTime;
+        }
+    },
+    spawnObstacle: function(){
+        obstacle = new Obstacle(this);
+        obstacle.spawnTime = timePassed;
+        this.lastSpawnTime = timePassed;
+        this.obstacles.push(obstacle);
+        this.things.push(obstacle);
+        this.spawnCooldown = 0;
     }
 }
 
