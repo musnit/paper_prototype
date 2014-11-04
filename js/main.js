@@ -58,6 +58,7 @@ function Player(game){
 Player.prototype = {
     constructor: Player,
     update: function(timePassed){
+        this.timePassed = timePassed;
         if (this.jumping){
             jumpingTime = timePassed - this.jumpStartTime;
             this.currentY = this.startingY - this.calculateJumpHeight(jumpingTime);
@@ -73,7 +74,6 @@ Player.prototype = {
         this.game.sketch.noStroke();
         this.draw1(this.game.sketch);
         this.draw2(this.game.sketch, timePassed);
-        //this.drawTrajectory(this.game.sketch);
     },
     draw1: function(sketch){
         sketch.setFill(this.fill);
@@ -81,23 +81,20 @@ Player.prototype = {
     },
     drawTrajectory: function(){
         var trajectoryTimePassed, y, jumpingTime;
-        var trajectoryTimePassed = this.jumpStartTime + 100;
-        if (this.jumping) {
-            console.log(trajectoryTimePassed)
-            console.log(this.calculateJumpHeight(trajectoryTimePassed))
-            while (this.calculateJumpHeight(trajectoryTimePassed) != 0){
-                console.log("T: " + trajectoryTimePassed + "H: " + this.calculateJumpHeight(trajectoryTimePassed))
-               // y = this.startingY - this.calculateJumpHeight(trajectoryTimePassed);
+        var trajectoryTimePassed = 1;
+        while (this.calculateJumpHeight(trajectoryTimePassed) != 0){
+            console.log("T: " + trajectoryTimePassed + "H: " + this.calculateJumpHeight(trajectoryTimePassed))
+            y = this.startingY - this.calculateJumpHeight(trajectoryTimePassed);
 
-                /*obstacle = new Obstacle(this.game);
-                obstacle.spawnTime = trajectoryTimePassed;
-                obstacle.startingY = y;
-                obstacle.startingX = this.startingX;
-                this.game.obstacles.push(obstacle);
-                this.game.things.push(obstacle);
-*/
-                trajectoryTimePassed = trajectoryTimePassed + 1000;
-            }
+            obstacle = new Obstacle(this.game);
+            obstacle.spawnTime = this.timePassed;
+            obstacle.startingY = y;
+            obstacle.startingX = this.startingX + trajectoryTimePassed/5;
+            obstacle.fill =  tinycolor("hsv(275, 20%, 100%)").toHsv()
+            this.game.obstacles.push(obstacle);
+            this.game.things.push(obstacle);
+
+            trajectoryTimePassed = trajectoryTimePassed + 1;
         }
     },
     draw2: function(sketch){
@@ -199,6 +196,7 @@ window.onload = function() {
                 timePressed = new Date() - game.startTime;
                 game.player.jumpStartTime = timePressed;
                 game.mouseClicks.push(timePressed);
+                game.player.drawTrajectory();
             }
         }
     };
