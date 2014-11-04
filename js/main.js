@@ -6,9 +6,7 @@ function Game(sketch){
     this.mouseClicks = [];
 
     this.spawnCooldown = 1000;
-    this.trailCooldown = 0;
     this.lastSpawnTime = 0;
-    this.lastTrailTime = 0;
 
     this.player = new Player(this);
     this.things.push(this.player);
@@ -17,14 +15,16 @@ function Game(sketch){
 
 Game.prototype = {
     constructor: Game,
-    draw: function(timePassed){
+    draw: function(){
         this.things.forEach(function(thing){
-            thing.draw(timePassed)
+            thing.draw()
         });
     },
     update: function(timePassed){
+        this.things.forEach(function(thing){
+            thing.update(timePassed)
+        });
         this.spawnObstacles();
-        this.spawnTrail();
     },
     spawnObstacles: function(){
         if (this.spawnCooldown > 1500) {
@@ -32,30 +32,6 @@ Game.prototype = {
         }
         else {
             this.spawnCooldown = timePassed - this.lastSpawnTime;
-        }
-    },
-    spawnTrail: function(){
-        if (this.trailCooldown > 10) {
-            var y, jumpingTime;
-            if (this.player.jumping){
-                jumpingTime = timePassed - this.player.jumpStartTime;
-                y = this.player.startingY - this.player.calculateJumpHeight(jumpingTime);
-            }
-            else{
-                y = this.player.startingY;
-            }
-
-            obstacle = new Obstacle(this);
-            obstacle.spawnTime = timePassed;
-            obstacle.startingY = y;
-            obstacle.startingX = this.player.startingX;
-            this.lastTrailTime = timePassed;
-            this.obstacles.push(obstacle);
-            this.things.push(obstacle);
-            this.trailCooldown = 0;
-        }
-        else {
-            this.trailCooldown = timePassed - this.lastTrailTime;
         }
     },
     spawnObstacle: function(){
@@ -73,36 +49,61 @@ function Player(game){
     this.fill2 = tinycolor("hsv(275, 100%, 100%)").toHsv()
     this.jumping = false;
     this.startingX = 100; 
-    this.startingY = 200; 
-    this.startingY2 = 400; 
+    this.startingY = 200;
+    this.currentY = this.startingY;
+    this.startingY2 = this.startingY + 200; 
     this.game = game;
 }
 
 Player.prototype = {
     constructor: Player,
-    draw: function(timePassed){
-        this.game.sketch.noStroke();
-        this.draw1(this.game.sketch, timePassed);
-        this.draw2(this.game.sketch, timePassed);
-    },
-    draw1: function(sketch, timePassed){
-        var y, jumpingTime;
+    update: function(timePassed){
         if (this.jumping){
             jumpingTime = timePassed - this.jumpStartTime;
-            y = this.startingY - this.calculateJumpHeight(jumpingTime);
+            this.currentY = this.startingY - this.calculateJumpHeight(jumpingTime);
+            if(this.currentY === this.startingY){
+                this.jumping = false;
+            }
         }
         else{
-            y = this.startingY;
+            this.currentY = this.startingY;
         }
-        
-        sketch.setFill(this.fill);
-        sketch.rect(this.startingX, y, 40, 50);
     },
-    draw2: function(sketch, timePassed){
-        var color, jumpingTime;
+    draw: function(){
+        this.game.sketch.noStroke();
+        this.draw1(this.game.sketch);
+        this.draw2(this.game.sketch, timePassed);
+        //this.drawTrajectory(this.game.sketch);
+    },
+    draw1: function(sketch){
+        sketch.setFill(this.fill);
+        sketch.rect(this.startingX, this.currentY, 40, 50);
+    },
+    drawTrajectory: function(){
+        var trajectoryTimePassed, y, jumpingTime;
+        var trajectoryTimePassed = this.jumpStartTime + 100;
+        if (this.jumping) {
+            console.log(trajectoryTimePassed)
+            console.log(this.calculateJumpHeight(trajectoryTimePassed))
+            while (this.calculateJumpHeight(trajectoryTimePassed) != 0){
+                console.log("T: " + trajectoryTimePassed + "H: " + this.calculateJumpHeight(trajectoryTimePassed))
+               // y = this.startingY - this.calculateJumpHeight(trajectoryTimePassed);
+
+                /*obstacle = new Obstacle(this.game);
+                obstacle.spawnTime = trajectoryTimePassed;
+                obstacle.startingY = y;
+                obstacle.startingX = this.startingX;
+                this.game.obstacles.push(obstacle);
+                this.game.things.push(obstacle);
+*/
+                trajectoryTimePassed = trajectoryTimePassed + 1000;
+            }
+        }
+    },
+    draw2: function(sketch){
+        var color;
         if (this.jumping){
-            jumpingTime = timePassed - this.jumpStartTime;
-            color = this.colorize(this.calculateJumpHeight(jumpingTime));
+            color = this.colorize(this.startingY - this.currentY);
         }
         else{
             color = this.fill2;
@@ -117,7 +118,6 @@ Player.prototype = {
         t = t/1000;
         var r = v0*t + a*t*t/2
         if(r < 0){
-            this.jumping = false;
             return 0;
         }
         else{
@@ -148,18 +148,21 @@ function Obstacle(game){
 }
 
 Obstacle.prototype = {
-    draw: function(timePassed){
+    draw: function(){
         this.game.sketch.noStroke();
-        this.draw1(this.game.sketch, timePassed);
-        this.draw2(this.game.sketch, timePassed);
+        this.draw1(this.game.sketch);
+        this.draw2(this.game.sketch);
     },
-    draw1: function(sketch, timePassed){
+    draw1: function(sketch){
         sketch.setFill(this.fill);
-        sketch.rect(this.calculateX(timePassed),this.startingY,40,50);
+        sketch.rect(this.calculateX(this.timePassed),this.startingY,40,50);
     },
-    draw2: function(sketch, timePassed){
+    draw2: function(sketch){
         sketch.setFill(this.fill2);
-        sketch.rect(this.calculateX(timePassed),this.startingY2,40,300);
+        sketch.rect(this.calculateX(this.timePassed),this.startingY2,40,300);
+    },
+    update: function(timePassed){
+        this.timePassed = timePassed;
     },
     calculateX: function(timePassed){
         var aliveTime = timePassed - this.spawnTime;
@@ -187,7 +190,7 @@ window.onload = function() {
             sketch.background(255);
             timePassed = new Date() - game.startTime;
             game.update(timePassed);
-            game.draw(timePassed);
+            game.draw();
         }
 
         sketch.mousePressed = function(){
