@@ -15,12 +15,12 @@ function Game(sketch){
 
 Game.prototype = {
     constructor: Game,
-    drawThings: function(timePassed){
+    draw: function(timePassed){
         this.things.forEach(function(thing){
             thing.draw(timePassed)
         });
     },
-    spawnThings: function(timePassed){
+    update: function(timePassed){
         if (this.spawnCooldown > 1500) {
             obstacle = new Obstacle(this);
             obstacle.spawnTime = timePassed;
@@ -121,16 +121,17 @@ Obstacle.prototype = {
         this.draw2(this.game.sketch, timePassed);
     },
     draw1: function(sketch, timePassed){
-        var aliveTime = timePassed - this.spawnTime;
-        var x = this.startingX - aliveTime/5;
         sketch.setFill(this.fill);
-        sketch.rect(x,this.startingY,40,50);
+        sketch.rect(this.calculateX(timePassed),this.startingY,40,50);
     },
     draw2: function(sketch, timePassed){
+        sketch.setFill(this.fill2);
+        sketch.rect(this.calculateX(timePassed),this.startingY2,40,300);
+    },
+    calculateX: function(timePassed){
         var aliveTime = timePassed - this.spawnTime;
         var x = this.startingX - aliveTime/5;
-        sketch.setFill(this.fill2);
-        sketch.rect(x,this.startingY2,40,300);
+        return x;
     }
 }
 
@@ -143,6 +144,7 @@ window.onload = function() {
             var myCanvas = sketch.createCanvas(1912, 1200);
             myCanvas.parent('canvas-container');
             sketch.colorMode(sketch.HSB,360,1,1)
+            //Monkeypatch to allow for hash parameter instead of tuple parameters to fill method
             sketch.setFill = function(hsvHash){
                 this.fill(hsvHash.h,hsvHash.s,hsvHash.v)
             }
@@ -151,8 +153,8 @@ window.onload = function() {
         sketch.draw = function(){
             sketch.background(255);
             timePassed = new Date() - game.startTime;
-            game.drawThings(timePassed);
-            game.spawnThings(timePassed);
+            game.update(timePassed);
+            game.draw(timePassed);
         }
 
         sketch.mousePressed = function(){
